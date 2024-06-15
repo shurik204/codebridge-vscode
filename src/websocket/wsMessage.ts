@@ -1,5 +1,6 @@
 import { completionId, completionItems } from "./sharedConsts";
 import { Dict } from "../utils";
+import { Suggestion } from "../data/suggestion";
 
 export enum WsMessageType {
 	INFO_REQUEST = "INFO_REQUEST",
@@ -58,7 +59,7 @@ export class WsInfoResponseMessage extends Dict<string, any> {
 }
 
 export class WsCompletionResponse extends Dict<string, any> {
-	public suggestions: string[] = [];
+	public suggestions: Suggestion[] = [];
 }
 
 export class WsErrorMessage extends Dict<string, any> {

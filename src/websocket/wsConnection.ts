@@ -1,5 +1,6 @@
 import { defaultServerUri, completionItems, completionId } from "./sharedConsts";
 import { WsCompletionResponse, WsInfoResponseMessage, WsMessage, WsMessageType } from "./wsMessage";
+import { Suggestion } from "../data/suggestion";
 import * as vscode from 'vscode';
 import { Dict } from "../utils";
 import WebSocket from "ws";
@@ -7,6 +8,7 @@ import WebSocket from "ws";
 export class WsConnection {
 	private constructor() {}
 
+	private static wasOpen: boolean = false;
 	private static websocket: WebSocket | undefined = undefined;
 	
 	public static open(uri: string = defaultServerUri) {
@@ -15,8 +17,15 @@ export class WsConnection {
 		WsConnection.websocket = new WebSocket(uri);
 
 		WsConnection.websocket.on("open", () => {
-			// WsConnection.requestInfo();
-			vscode.window.showInformationMessage("[CodeBridge] Connected to WebSocket server");
+			WsConnection.wasOpen = true;
+			WsConnection.requestInfo();
+		});
+
+		WsConnection.websocket.on("error", (error) => {
+			if (WsConnection.wasOpen) {
+				vscode.window.showErrorMessage("[CodeBridge] Error: " + error.message);
+				console.error("[CodeBridge] Error: " + error.message);
+			}
 		});
 
 		WsConnection.websocket.on("message", (data: WebSocket.Data) => {
@@ -25,27 +34,30 @@ export class WsConnection {
 			if (message.type === WsMessageType.INFO_RESPONSE) {
 				const data = message.data as WsInfoResponseMessage;
 				// if (Object.prototype.hasOwnProperty.call(message.data, "player_name")) {
-				let infoString: string = `Connected as ${data.player_name}.\n`;
-				infoString += `Minecraft ${data.game_version} (Pack format: ${data.datapack_version})`;
-				vscode.window.showInformationMessage("[CodeBridge] " + infoString);
-				console.log("[CodeBridge] " + infoString);
+				// let infoString: string = ;
+				// infoString += `Minecraft  (Pack format: ${data.datapack_version})`;
+				vscode.window.showInformationMessage(`[CodeBridge] Connected as ${data.player_name}. MC: ${data.game_version}\n`);
+				// console.log("[CodeBridge] " + infoString);
 			}
 
 			if (message.type === WsMessageType.COMPLETION_RESPONSE) {
 				const data = message.data as WsCompletionResponse;
-				completionItems.set(message.id, data.suggestions as string[]);
+				completionItems.set(message.id, data.suggestions.map((suggestion) => Suggestion.fromObject(suggestion)));
 				// console.log('Received completions: ' + data.suggestions);
 			}
 
 			if (message.type === WsMessageType.ERROR) {
-				vscode.window.showInformationMessage("[CodeBridge] error: " + message.getErrorMessage());
-				console.log("[CodeBridge] error: " + message.data);
-			}
+				vscode.window.showErrorMessage(`[CodeBridge] Error: ${message.getErrorMessage()}`, { modal: true });
+			}	
 		});
 
 
 		WsConnection.websocket.on("close", () => {
-			vscode.window.showInformationMessage("[CodeBridge] Disconnected from WebSocket server");
+			vscode.window.showInformationMessage("[CodeBridge] Disconnected from WebSocket server", "Reconnect").then((value) => {
+				if (value === "Reconnect") {
+					WsConnection.open();
+				}		
+			});
 			console.log("[CodeBridge] Disconnected from WebSocket server");
 		});
 	}
@@ -78,13 +90,13 @@ export class WsConnection {
 		return request.id;
 	}
 
-	public static async waitForCompletionResponse(id: number, timeout: number = 1000): Promise<string[]> {
-		return new Promise<string[]>((resolve, reject) => {
+	public static async waitForCompletionResponse(id: number, timeout: number = 1000): Promise<Suggestion[]> {
+		return new Promise<Suggestion[]>((resolve, reject) => {
 			const startTime = Date.now();
 			const interval = setInterval(() => {
 				if (completionItems.has(id)) {
 					clearInterval(interval);
-					resolve(completionItems.get(id) as string[]);
+					resolve(completionItems.get(id) as Suggestion[]);
 					completionItems.delete(id);
 				}
 				if (Date.now() - startTime > timeout) {

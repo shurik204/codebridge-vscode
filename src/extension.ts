@@ -6,7 +6,6 @@ export function activate(context: vscode.ExtensionContext) {
 	WsConnection.open();
 
 	const mcfunctionProvider = vscode.languages.registerCompletionItemProvider('mcfunction', {
-		// Connect to websocket server on port 43081
 		async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
 			if (!WsConnection.isOpen()) {
 				return undefined;
@@ -17,20 +16,20 @@ export function activate(context: vscode.ExtensionContext) {
 				// Asynchronously wait for the response
 				const completionItems = await WsConnection.waitForCompletionResponse(requestId);
 				return completionItems.map((item) => {
-					const completionItem = new vscode.CompletionItem(item, vscode.CompletionItemKind.Property);
-					// completionItem.insertText = new vscode.SnippetString(item);
-					return completionItem;
+					// const completionItem = new vscode.CompletionItem(item.text, vscode.CompletionItemKind.Property);
+					// completionItem.insertText = new vscode.SnippetString(item);				
+					return item.toCompletionItem();
 				});
 			} catch (e) {
 				return undefined;
 			}
 		}
 	},
-	' ', ',', '"', '=', ':', '[', ']', '{', '}');
+	' ', '.', ',', '"', '=', ':', '[', ']', '{', '}');
 
 	context.subscriptions.push(mcfunctionProvider);
 }
-
+	
 
 export function deactivate() { 
 	if (WsConnection.isOpen()) {
