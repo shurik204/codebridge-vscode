@@ -1,0 +1,8 @@
+.vscode
+node_modules
+!node_modules/ws
+src/
+tsconfig.json
+webpack.config.js
+esbuild.js
+run/
