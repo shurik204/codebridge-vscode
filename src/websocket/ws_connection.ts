@@ -1,5 +1,5 @@
-import { defaultServerUri, completionItems, completionId } from "./sharedConsts";
-import { WsCompletionResponse, WsInfoResponseMessage, WsMessage, WsMessageType } from "./wsMessage";
+import { defaultServerUri, completionItems, completionId } from "./shared_consts";
+import { WsCompletionResponse, WsInfoResponseMessage, WsMessage, WsMessageType } from "./ws_message";
 import { Suggestion } from "../data/suggestion";
 import * as vscode from 'vscode';
 import { Dict } from "../utils";

@@ -1,4 +1,4 @@
-import { completionId, completionItems } from "./sharedConsts";
+import { completionId, completionItems } from "./shared_consts";
 import { Dict } from "../utils";
 import { Suggestion } from "../data/suggestion";
 
